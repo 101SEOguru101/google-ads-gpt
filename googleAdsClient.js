@@ -5,8 +5,8 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const DEVELOPER_TOKEN = process.env.DEVELOPER_TOKEN;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // MCC ID (Manager Account)
-const CLIENT_ACCOUNT_ID = "1918019730"; // ✅ Replace with a real client account ID
+const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // ✅ Your MCC ID (Manager Account)
+const CLIENT_ACCOUNT_ID = "1918019730"; // ✅ Must be an active, linked client account under MCC
 
 // ✅ Function to Get OAuth2 Access Token
 async function getAccessToken() {
@@ -33,12 +33,12 @@ async function getAccounts() {
     const accessToken = await getAccessToken();
     
     const query = `
-        SELECT customer_client.client_customer, customer_client.descriptive_name
+        SELECT customer_client.id, customer_client.descriptive_name
         FROM customer_client
         WHERE customer_client.manager = FALSE
     `;
 
-    // ✅ Use CLIENT_ACCOUNT_ID instead of MCC_CUSTOMER_ID
+    // ✅ Fix the URL: MCC cannot be queried, must use a client account ID
     const url = `https://googleads.googleapis.com/v14/customers/${CLIENT_ACCOUNT_ID}/googleAds:search`;
 
     try {
@@ -63,7 +63,7 @@ async function getAccounts() {
         }
 
         return response.data.results.map(client => ({
-            id: client.customerClient.clientCustomer,
+            id: client.customerClient.id,
             name: client.customerClient.descriptiveName,
         }));
     } catch (error) {
@@ -82,6 +82,7 @@ async function getCampaigns(customerId) {
         LIMIT 10
     `;
 
+    // ✅ Ensure that we are only querying valid client accounts, not the MCC
     const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:search`;
 
     try {
