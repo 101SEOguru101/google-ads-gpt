@@ -1,17 +1,3 @@
-require("dotenv").config();
-const express = require("express");
-const { getAccounts, getCampaigns } = require("./googleAdsClient");
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-
-// Home Route
-app.get("/", (req, res) => {
-    res.send({ message: "Google Ads MCC API is running!" });
-});
-
 // Get all Google Ads accounts under MCC
 app.get("/accounts", async (req, res) => {
     try {
@@ -22,7 +8,7 @@ app.get("/accounts", async (req, res) => {
     }
 });
 
-// Get campaigns for a specific Google Ads account
+// Get campaigns for a specific client account
 app.get("/campaigns", async (req, res) => {
     const { customer_id } = req.query;
 
@@ -36,9 +22,4 @@ app.get("/campaigns", async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-});
-
-// Start Server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
 });
