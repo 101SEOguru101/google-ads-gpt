@@ -34,10 +34,10 @@ async function getAccounts() {
     const query = `
         SELECT customer_client.client_customer, customer_client.descriptive_name
         FROM customer_client
-        WHERE customer_client.level = 1
+        WHERE customer_client.manager = FALSE
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:search`;
+    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:searchStream`; // ✅ FIXED ENDPOINT
 
     try {
         const response = await axios.post(
@@ -80,7 +80,7 @@ async function getCampaigns(customerId) {
         LIMIT 10
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:search`;
+    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:searchStream`; // ✅ FIXED ENDPOINT
 
     try {
         const response = await axios.post(
