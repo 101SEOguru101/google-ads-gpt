@@ -5,7 +5,8 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const DEVELOPER_TOKEN = process.env.DEVELOPER_TOKEN;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // MCC ID
+const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // MCC ID (Manager Account)
+const CLIENT_ACCOUNT_ID = "1918019730"; // ✅ Your valid Client Account ID
 
 // ✅ Function to Get OAuth2 Access Token
 async function getAccessToken() {
@@ -37,7 +38,7 @@ async function getAccounts() {
         WHERE customer_client.manager = FALSE
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:search`;
+    const url = `https://googleads.googleapis.com/v14/customers/${CLIENT_ACCOUNT_ID}/googleAds:search`;
 
     try {
         const response = await axios.post(
