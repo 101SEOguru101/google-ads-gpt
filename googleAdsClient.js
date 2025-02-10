@@ -5,7 +5,7 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const DEVELOPER_TOKEN = process.env.DEVELOPER_TOKEN;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // Your MCC ID
+const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // MCC ID
 
 // ✅ Function to Get OAuth2 Access Token
 async function getAccessToken() {
@@ -27,12 +27,12 @@ async function getAccessToken() {
     }
 }
 
-// ✅ Function to Fetch All Accounts Under MCC
+// ✅ Function to Fetch All Client Accounts Under MCC
 async function getAccounts() {
     const accessToken = await getAccessToken();
     
     const query = `
-        SELECT customer_client.id, customer_client.descriptive_name
+        SELECT customer_client.client_customer, customer_client.descriptive_name
         FROM customer_client
         WHERE customer_client.manager = FALSE
     `;
@@ -48,26 +48,25 @@ async function getAccounts() {
                     Authorization: `Bearer ${accessToken}`,
                     "developer-token": DEVELOPER_TOKEN,
                     "Content-Type": "application/json",
-                    "login-customer-id": MCC_CUSTOMER_ID
+                    "login-customer-id": MCC_CUSTOMER_ID // ✅ Required for MCC Queries
                 },
             }
         );
 
-        console.log("✅ API Response:", JSON.stringify(response.data, null, 2)); // Log successful response
+        console.log("✅ API Response:", JSON.stringify(response.data, null, 2));
 
-        // Check if the response contains results
         if (!response.data.results || response.data.results.length === 0) {
-            console.warn("⚠️ No accounts found under MCC.");
+            console.warn("⚠️ No client accounts found under MCC.");
             return [];
         }
 
         return response.data.results.map(client => ({
-            id: client.customerClient.id,
+            id: client.customerClient.clientCustomer,
             name: client.customerClient.descriptiveName,
         }));
     } catch (error) {
         console.error("❌ API Request Failed:", error.response?.data || error.message);
-        throw new Error("Failed to fetch Google Ads accounts");
+        throw new Error("Failed to fetch Google Ads client accounts");
     }
 }
 
@@ -97,7 +96,7 @@ async function getCampaigns(customerId) {
             }
         );
 
-        console.log("✅ Campaigns Response:", JSON.stringify(response.data, null, 2)); // Log response
+        console.log("✅ Campaigns Response:", JSON.stringify(response.data, null, 2));
 
         return response.data.results.map(campaign => ({
             id: campaign.campaign.id,
