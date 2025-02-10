@@ -5,7 +5,8 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const DEVELOPER_TOKEN = process.env.DEVELOPER_TOKEN;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // ✅ Your MCC ID (Manager Account)
+const MCC_CUSTOMER_ID = process.env.CUSTOMER_ID; // MCC ID (Manager Account)
+const CLIENT_ACCOUNT_ID = "1918019730"; // ✅ Replace with a real client account ID
 
 // ✅ Function to Get OAuth2 Access Token
 async function getAccessToken() {
@@ -37,7 +38,8 @@ async function getAccounts() {
         WHERE customer_client.manager = FALSE
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:searchStream`; // ✅ FIXED ENDPOINT
+    // ✅ Use CLIENT_ACCOUNT_ID instead of MCC_CUSTOMER_ID
+    const url = `https://googleads.googleapis.com/v14/customers/${CLIENT_ACCOUNT_ID}/googleAds:search`;
 
     try {
         const response = await axios.post(
@@ -48,7 +50,7 @@ async function getAccounts() {
                     Authorization: `Bearer ${accessToken}`,
                     "developer-token": DEVELOPER_TOKEN,
                     "Content-Type": "application/json",
-                    "login-customer-id": MCC_CUSTOMER_ID // ✅ Required for MCC Queries
+                    "login-customer-id": MCC_CUSTOMER_ID // ✅ MCC ID must be passed in headers
                 },
             }
         );
@@ -80,7 +82,7 @@ async function getCampaigns(customerId) {
         LIMIT 10
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:searchStream`; // ✅ FIXED ENDPOINT
+    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:search`;
 
     try {
         const response = await axios.post(
