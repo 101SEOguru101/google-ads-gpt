@@ -1,7 +1,7 @@
 {
-  "name": "google-ads-chatbot",
+  "name": "google-ads-mcc-api",
   "version": "1.0.0",
-  "description": "Google Ads Chatbot using OpenAI and Google Ads API",
+  "description": "Google Ads MCC API Integration",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,8 +9,6 @@
   "dependencies": {
     "express": "^4.18.2",
     "axios": "^1.3.4",
-    "dotenv": "^16.0.3",
-    "google-auth-library": "^8.7.0",
-    "openai": "^4.7.3"
+    "dotenv": "^16.0.3"
   }
 }
