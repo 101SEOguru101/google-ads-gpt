@@ -38,7 +38,7 @@ async function getAccounts() {
         WHERE customer_client.manager = FALSE
     `;
 
-    const url = `https://googleads.googleapis.com/v14/customers/${CLIENT_ACCOUNT_ID}/googleAds:search`;
+    const url = `https://googleads.googleapis.com/v14/customers/${CLIENT_ACCOUNT_ID}/googleAds:searchStream`;
 
     console.log(`🔹 Making request to: ${url}`);
 
@@ -58,54 +58,16 @@ async function getAccounts() {
 
         console.log("✅ API Response:", JSON.stringify(response.data, null, 2));
 
-        if (!response.data.results || response.data.results.length === 0) {
+        if (!response.data.length) {
             console.warn("⚠️ No client accounts found under MCC.");
             return [];
         }
 
-        return response.data.results.map(client => ({
-            id: client.customerClient.id,
-            name: client.customerClient.descriptiveName,
-        }));
-    } catch (error) {
-        console.error("❌ API Request Failed:");
-        console.error("🔹 HTTP Status:", error.response?.status);
-        console.error("🔹 Error Message:", error.response?.data || error.message);
-        throw new Error("Failed to fetch Google Ads client accounts");
-    }
-}
-
-// ✅ Function to Fetch Campaigns for Any Client Account
-async function getCampaigns(customerId) {
-    const accessToken = await getAccessToken();
-    
-    const query = `
-        SELECT campaign.id, campaign.name, campaign.status
-        FROM campaign
-        LIMIT 10
-    `;
-
-    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:search`;
-
-    console.log(`🔹 Fetching campaigns for: ${customerId}`);
-
-    try {
-        const response = await axios.post(
-            url,
-            { query },
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "developer-token": DEVELOPER_TOKEN,
-                    "Content-Type": "application/json",
-                    "login-customer-id": MCC_CUSTOMER_ID
-                },
-            }
+        return response.data.flatMap(row =>
+            row.results.map(client => ({
+                id: client.customerClient.id,
+                name: client.customerClient.descriptiveName,
+            }))
         );
-
-        console.log("✅ Campaigns Response:", JSON.stringify(response.data, null, 2));
-
-        return response.data.results.map(campaign => ({
-            id: campaign.campaign.id,
-            name: campaign.campaign.name,
-            status: campaign.campaign.status
+    } catch (error) {
+        console.error("❌
