@@ -19,50 +19,96 @@ async function getAccessToken() {
 
     try {
         const response = await axios.post(url, params);
-        console.log("✅ Access Token Retrieved Successfully");
+        console.log("✅ Access Token Retrieved Successfully:", response.data.access_token);
         return response.data.access_token;
     } catch (error) {
-        console.error("❌ Error getting access token:", error.response?.data || error.message);
+        console.error("❌ ERROR: Failed to get access token:", error.response?.data || error.message);
         throw new Error("Failed to get access token");
     }
 }
 
-// ✅ Step 1: List All Accessible Accounts
-async function getAllAccounts() {
+// ✅ Step 1: Check if Google Ads API recognizes this MCC
+async function checkMCC() {
     const accessToken = await getAccessToken();
-    const url = "https://googleads.googleapis.com/v14/customers:listAccessibleCustomers";
+    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:search`;
 
-    console.log(`🔹 Checking accessible accounts from MCC: ${MCC_CUSTOMER_ID}`);
+    const query = `
+        SELECT customer.id, customer.manager FROM customer
+    `;
+
+    console.log(`🔹 Checking MCC Status for ${MCC_CUSTOMER_ID}...`);
 
     try {
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "developer-token": DEVELOPER_TOKEN,
-                "Content-Type": "application/json"
-            },
-        });
+        const response = await axios.post(
+            url,
+            { query },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "developer-token": DEVELOPER_TOKEN,
+                    "Content-Type": "application/json",
+                    "login-customer-id": MCC_CUSTOMER_ID
+                },
+            }
+        );
 
-        console.log("✅ Accessible Accounts:", JSON.stringify(response.data, null, 2));
-
-        if (!response.data.resourceNames || response.data.resourceNames.length === 0) {
-            console.warn("⚠️ No client accounts found under MCC.");
-            return [];
-        }
-
-        return response.data.resourceNames.map(account => ({
-            id: account.replace("customers/", ""),
-            name: `Account ${account.replace("customers/", "")}`,
-        }));
+        console.log("✅ MCC Status Response:", JSON.stringify(response.data, null, 2));
+        return response.data.results;
     } catch (error) {
-        console.error("❌ Failed to fetch client accounts:");
+        console.error("❌ ERROR: Google Ads API rejected MCC check:");
         console.error("🔹 HTTP Status:", error.response?.status);
         console.error("🔹 Error Message:", error.response?.data || error.message);
-        throw new Error("Failed to fetch accessible accounts");
+        throw new Error("Google Ads API does not recognize MCC ID");
     }
 }
 
-// ✅ Step 2: Fetch Campaigns for Each Client Account
+// ✅ Step 2: List All Accounts Under the MCC
+async function getAllAccounts() {
+    const accessToken = await getAccessToken();
+    const url = `https://googleads.googleapis.com/v14/customers/${MCC_CUSTOMER_ID}/googleAds:search`;
+
+    const query = `
+        SELECT customer_client.id, customer_client.descriptive_name
+        FROM customer_client
+        WHERE customer_client.level = 1
+    `;
+
+    console.log(`🔹 Fetching all client accounts under MCC: ${MCC_CUSTOMER_ID}`);
+
+    try {
+        const response = await axios.post(
+            url,
+            { query },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "developer-token": DEVELOPER_TOKEN,
+                    "Content-Type": "application/json",
+                    "login-customer-id": MCC_CUSTOMER_ID
+                },
+            }
+        );
+
+        console.log("✅ Found Accounts:", JSON.stringify(response.data, null, 2));
+
+        if (!response.data.results || response.data.results.length === 0) {
+            console.warn("⚠️ No linked client accounts found under this MCC.");
+            return [];
+        }
+
+        return response.data.results.map(client => ({
+            id: client.customerClient.id,
+            name: client.customerClient.descriptiveName,
+        }));
+    } catch (error) {
+        console.error("❌ ERROR: Failed to fetch accounts under MCC:");
+        console.error("🔹 HTTP Status:", error.response?.status);
+        console.error("🔹 Error Message:", error.response?.data || error.message);
+        throw new Error("Google Ads API does not return client accounts");
+    }
+}
+
+// ✅ Step 3: Fetch Campaigns for ALL Client Accounts
 async function getCampaignsForAllAccounts() {
     const accessToken = await getAccessToken();
     const accounts = await getAllAccounts();
@@ -110,12 +156,12 @@ async function getCampaignsForAllAccounts() {
 
             allCampaigns.push(...campaigns);
         } catch (error) {
-            console.error(`❌ Error fetching campaigns for ${customerId}:`, error.response?.data || error.message);
+            console.error(`❌ ERROR: Fetching campaigns for ${customerId} failed:`, error.response?.data || error.message);
         }
     }
 
     return allCampaigns;
 }
 
-// ✅ Ensure module exports are properly closed
-module.exports = { getAllAccounts, getCampaignsForAllAccounts };
+// ✅ Export functions for server.js
+module.exports = { checkMCC, getAllAccounts, getCampaignsForAllAccounts };
