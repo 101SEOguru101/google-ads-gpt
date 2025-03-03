@@ -70,4 +70,57 @@ async function getAccounts() {
             }))
         );
     } catch (error) {
-        console.error("❌
+        console.error("❌ API Request Failed:");
+        console.error("🔹 HTTP Status:", error.response?.status);
+        console.error("🔹 Error Message:", error.response?.data || error.message);
+        throw new Error("Failed to fetch Google Ads client accounts");
+    }
+}
+
+// ✅ Function to Fetch Campaigns for Any Client Account
+async function getCampaigns(customerId) {
+    const accessToken = await getAccessToken();
+    
+    const query = `
+        SELECT campaign.id, campaign.name, campaign.status
+        FROM campaign
+        LIMIT 10
+    `;
+
+    const url = `https://googleads.googleapis.com/v14/customers/${customerId}/googleAds:searchStream`;
+
+    console.log(`🔹 Fetching campaigns for: ${customerId}`);
+
+    try {
+        const response = await axios.post(
+            url,
+            { query },
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "developer-token": DEVELOPER_TOKEN,
+                    "Content-Type": "application/json",
+                    "login-customer-id": MCC_CUSTOMER_ID
+                },
+            }
+        );
+
+        console.log("✅ Campaigns Response:", JSON.stringify(response.data, null, 2));
+
+        return response.data.flatMap(row =>
+            row.results.map(campaign => ({
+                id: campaign.campaign.id,
+                name: campaign.campaign.name,
+                status: campaign.campaign.status,
+            }))
+        );
+    } catch (error) {
+        console.error("❌ Error fetching campaigns:");
+        console.error("🔹 HTTP Status:", error.response?.status);
+        console.error("🔹 Error Message:", error.response?.data || error.message);
+        throw new Error("Failed to fetch campaigns");
+    }
+}
+
+// ✅ Ensure module exports are properly closed
+module.exports = { getAccounts, getCampaigns };
